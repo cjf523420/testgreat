@@ -3,8 +3,8 @@
   <div class="handle-box">
     <!-- <el-input  v-model="productionProcess" placeholder="名称" ></el-input> -->
     <!-- 监控input变化,filer(productionProcess) -->
-    <el-input  v-model="productionProcess" placeholder="名称" ></el-input>
-    <el-button type="primary" icon="el-icon-search" @click="search()">搜索</el-button>
+    <el-input  v-model="productionProcess" placeholder="名称" ></el-input>   
+    <el-button type="primary" icon="el-icon-search" @click="filter(Number(productionProcess))">搜索</el-button>
   </div>
 
   <div class="reportwork"></div>
@@ -29,10 +29,7 @@
 import axios from "axios";
 
 //遍历API获取想要的字段
-//初始值不动
 let DataOrdList = [];
-//筛选值
-let DataFilter = [];
 const maplist = (parma) => {
   parma.forEach((orderList) => {
     const orderNumber = orderList.orderNumber ? orderList.orderNumber : "";
@@ -65,9 +62,10 @@ const maplist = (parma) => {
 export default {
   data() {
     return {
-      listData: [],
+      listData: [],//展示数据数组
       productionProcess: '',
-      productionProcessList:[]
+      // productionProcessList:[],
+      Initiallist:[]
      // DataOrdList: DataOrdList,
     };
   },
@@ -82,7 +80,7 @@ export default {
     //             handelInput
     //         }
     //   },
-  beforeCreate(a) {
+  beforeCreate() {
     axios
       .post("api/v1/Private/SynFactory/ProductionPlan/Search", {
         // ProductNamePartNo: "",
@@ -93,19 +91,19 @@ export default {
         // lastModifyTimeStartDate: null,
         // machineIDList: [],
         // multiSNSearch: "",
-        productionProcessList: [a],
+        productionProcessList: [],
         startIndex: 0,
       }
 )
       .then((res) => {
         // console.log(res.data.content.orderList)
+       
+        this.Initiallist = maplist(res.data.content.orderList);
 
-        //初始数组 = maplist(res.data.content.orderList);
-
-        this.listData = 初始数组
+        this.listData = this.Initiallist
 
         //maplist(res.data.content.orderList)
-        //console.log(this.listData.productionProcess);
+        console.log(this.listData);
       })
       .catch((err) => {
         alert(err);
@@ -126,43 +124,48 @@ export default {
 
 
   methods: {
-    filer(prop){
-        this.listData = this.初始.filter(()=> { 初始.productionOrderList = prop })
-        console.log();
-    },
-    find(prop){
-        axios
-        .then{
-            this.listData = 初始数组
+    filter(prop){
+      console.log(prop)
+      // console.log(this.Initiatllist)
+      //filter((t)=>{return (条件)})
+      this.listData = this.Initiallist.filter((temp)=> { 
+        console.log(temp.productionProcessList)
+        //=== 严格比较
+        return temp.productionProcess === prop
+        })
 
-        }
+      console.log("listData",this.listData);
+      // console.log(productionProcess)
+      find();
+    //  console.log(this.listData)
+    },
+    find(){
+        axios
+          .post("api/v1/Private/SynFactory/ProductionPlan/Search", {
+          // ProductNamePartNo: "",
+          count: 200,
+          // expectedStartDateEnd: 1669075200000,
+          // expectedStartDateStart: 1653696000000,
+          // lastModifyTimeEndDate: null,
+          // lastModifyTimeStartDate: null,
+          // machineIDList: [],
+          // multiSNSearch: "",
+          productionProcessList: [this.productionProcess],
+          startIndex: 0,
+        })
+        .then((res) => {
+            console.log(res.data.content.orderList);
+            this.Initiallist = maplist(res.data.content.orderList);
+            this.listData = this.Initiallist
+            console.log(this.listData)
+        })
+        .catch((err) => {
+        alert(err);
+      });
     }
     
-    // search(){
-    //     //测试绑定输出
-    //     this.productionProcessList.push(this.productionProcess)
-    // }
-
-    // search(){
-    //     const testProcess = this.searchProcess,
-    //     // this.listData.forEach(response => {
-    //     //     if(testProcess === response.productionProcess){
-    //     //         this.searchData.push(response)
-    //     //         console.log('完成一次对比')
-    //     //     }
-    //     // });
-    //     for (let list in this.listData) {
-    //         if (this.searchProcess == list.productionProcess){
-    //             this.searchData.push(list)
-    //         }
-    //     }
-    //     console.log('搜索')
-    //     console.log(this.searchData)
-    // }
   },
 };
-
-//filter
 
 </script>
 <style>
