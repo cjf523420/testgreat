@@ -24,6 +24,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/orderlist',
     name: 'orderlist',
     component: () => import(/* webpackChunkName: "about" */ '../views/OrderList.vue')
+  },
+  {
+    path: '/list',
+    name: 'list',
+    component: () => import(/* webpackChunkName: "about" */ '../views/ListView.vue')
   }
 ]
 
