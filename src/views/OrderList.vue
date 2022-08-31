@@ -18,10 +18,11 @@
       >搜索</el-button
     >
   </div>
-
+  
   <div class="reportwork"></div>
 
   <div class="workorder">
+    <span>111111{{listData.percentage}}</span>
     <el-table :data="listData" style="width: 100%">
       <el-table-column fixed prop="orderNumber" label="工单号" />
       <el-table-column fixed prop="customerName" label="客户名称" />
@@ -30,10 +31,16 @@
       <el-table-column prop="productName" label="产品名称" />
       <el-table-column prop="partNumber" label="产品料号" />
       <el-table-column prop="requiredThroughput" label="需求工件数" />
-      <el-table-column prop="standardProductionTime" label="已完成工件数" />
-      <el-table-column label="工单进度" width="200"><el-progress :percentage="percentage" :color="customColors" /></el-table-column>
+      <el-table-column prop="standardProductionTime" label="已完成" />
+      
+      <el-table-column prop="percentage" label="工单进度" width="200"><el-progress :percentage="percentage" :color="customColors" /></el-table-column>
       <el-table-column prop="productionProcess" label="工序" />
+      <el-table-column prop="expectedStartDate" label="预开工日期" />
+      <el-table-column prop="orderExpectedDue" label="预完工日期" />
+
+      <el-table-column prop="state" label="订单状态" />
     </el-table>
+    
   </div>
 
   <div class="workorderstatus"></div>
@@ -46,27 +53,36 @@ import axios from "axios";
 let DataOrdList = [];
 const maplist = (parma) => {
   parma.forEach((orderList) => {
+    const orderExpectedDue = orderList.orderExpectedDue ? orderList.orderExpectedDue : "";//
     const orderNumber = orderList.orderNumber ? orderList.orderNumber : "";
     const customerName = orderList.customerName ? orderList.customerName : "";
     orderList.productionOrderList.forEach((productionOrderList) => {
       const productName = productionOrderList.productName;
       const partNumber = productionOrderList.partNumber;
+      
       productionOrderList.workOrderContent.forEach((workOrderContent) => {
         const requiredThroughput = workOrderContent.requiredThroughput;
-        const standardProductionTime =workOrderContent.standardProductionTime
+        const standardProductionTime =workOrderContent.standardProductionTime;
         const productionProcess = workOrderContent.productionProcess;
+        const expectedStartDate = workOrderContent.expectedStartDate;//
         const machineID = workOrderContent.machineInfo.machineID;
         const machineName = workOrderContent.machineInfo.machineName;
         DataOrdList.push({
-          orderNumber: orderNumber,
-          customerName: customerName,
-          productName: productName,
-          partNumber: partNumber,
-          requiredThroughput: requiredThroughput,
-          standardProductionTime:standardProductionTime,
-          productionProcess: productionProcess,
-          machineID: machineID,
-          machineName: machineName,
+          orderExpectedDue : orderExpectedDue,//预计完工日期
+          orderNumber: orderNumber,//订单号
+          customerName: customerName,//客户名称
+          productName: productName,//产品名称
+          partNumber: partNumber,//产品料号
+          expectedStartDate:expectedStartDate,//预计开工日期
+          requiredThroughput: requiredThroughput,//需求工件数
+          standardProductionTime:standardProductionTime,//已加工工件数
+
+         // percentage:(standardProductionTime/requiredThroughput)*100,//工单进度
+
+          productionProcess: productionProcess,//工序
+          machineID: machineID,//机台ID
+          machineName: machineName,//机台名称
+         // state:state//订单状态
         });
       });
     });
@@ -75,7 +91,19 @@ const maplist = (parma) => {
   return DataOrdList;
 };
 
+//判断工单状态、当日时间戳、预计开工日期、预计完工日期
+// const nowTime = Math.round(new Date() / 1000);
+//         const state = 0;
+//         if(nowTime < this.expectedStartDate){
+//              this.state = 1
+//         } else if(nowTime >= this.expectedStartDate && nowTime < this.orderExpectedDue ){
+//             this.state = 2
+//         } else{
+//           this.state = 3
+//         }
+
 export default {
+  
   data() {
     return {
       listData: [], //展示数据数组
@@ -190,9 +218,19 @@ export default {
           label: "联聚-47",
         },
       ],
+      customColors: [
+        { color: '#f56c6c', percentage: 20 },
+        { color: '#e6a23c', percentage: 40 },
+        { color: '#5cb87a', percentage: 60 },
+        { color: '#1989fa', percentage: 80 },
+        { color: '#6f7ad3', percentage: 100 },
+      ],
+      percentage:"80",
+
       // DataOrdList: DataOrdList,
     };
   },
+
 
   //初始化列表
   beforeCreate() {
@@ -208,21 +246,38 @@ export default {
         // multiSNSearch: "",
         productionProcessList: [],
         startIndex: 0,
+        
+        // onDownloadProgress(a){
+        //     this.percentage=Math.round(a.standardProductionTime.loaded / a.requiredThroughput * 100);
+        // }
       })
       .then((res) => {
-        // console.log(res.data.content.orderList)
+            console.log(res.data.content.orderList)
+            //console.log("时间",res.data.content.orderList.productionOrderList.workOrderContent);
+            // console.log(this.expectedStartDate);
+            // this.$moment(this.orderExpectedDue).tz('Australia/Sydney').format('MMMM Do YYYY, h:mm:ss a')
+            
+            res.data.content.orderList.forEach((item,item1) =>{
+              var date =new Date(parseInt(item.orderExpectedDue));
+              item.orderExpectedDue =  `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDay()}
+                                        ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
+              var date1 =new Date(parseInt(item1.expectedStartDate));
+              item.expectedStartDate=  `${date1.getFullYear()}/${date1.getMonth() + 1}/${date1.getDay()}
+                                        ${date1.getHours()}:${date1.getMinutes()}:${date1.getSeconds()}`;
+
+            }),
+          
         this.Initiallist = maplist(res.data.content.orderList);
-
         this.listData = this.Initiallist;
 
-        //maplist(res.data.content.orderList)
         console.log(this.listData);
       })
       .catch((err) => {
         alert(err);
       });
   },
+ 
   //1. 先区分筛选前的数据 初始 = []和筛选后的数据 listData = []
   //2. call api把值放入筛选前的数组
   //3. 写一个filer方法，把筛选后的值放入 listData()
@@ -250,35 +305,12 @@ export default {
 
       console.log("listData", this.listData);
       // console.log(productionProcess)
-      find();
       //  console.log(this.listData)
     },
-    find() {
-      axios
-        .post("api/v1/Private/SynFactory/ProductionPlan/Search", {
-          // ProductNamePartNo: "",
-          count: 200,
-          // expectedStartDateEnd: 1669075200000,
-          // expectedStartDateStart: 1653696000000,
-          // lastModifyTimeEndDate: null,
-          // lastModifyTimeStartDate: null,
-          machineIDList: [],
-          // multiSNSearch: "",
-          productionProcessList: [],
-          startIndex: 0,
-        })
-        .then((res) => {
-          // console.log(res.data.content.orderList);
-          //this.Initiallist = ;
-          this.listData = maplist(res.data.content.orderList);
-          //console.log("datalist",this.listData)
-        })
-        .catch((err) => {
-          alert(err);
-        });
-    },
+    
    },
 };
+
 </script>
 <style>
 el-table-column {
